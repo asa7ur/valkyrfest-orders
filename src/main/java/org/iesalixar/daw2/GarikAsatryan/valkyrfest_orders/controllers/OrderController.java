@@ -15,6 +15,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
@@ -68,6 +69,18 @@ public class OrderController {
                 .collect(Collectors.toMap(CampingType::getId, c -> c)));
 
         return "order/checkout";
+    }
+
+    @GetMapping("/my-orders")
+    public String showMyOrders(Authentication authentication, Model model) {
+        // Obtenemos el email del usuario logueado
+        String email = authentication.getName();
+
+        // Recuperamos su lista de pedidos
+        List<Order> myOrders = orderService.getOrdersByUser(email);
+
+        model.addAttribute("orders", myOrders);
+        return "order/my-orders";
     }
 
     // 4. Eliminar items desde el checkout

@@ -53,6 +53,10 @@ public class OrderService {
         return orderRepository.findAll(pageable);
     }
 
+    public List<Order> getOrdersByUser(String email) {
+        return orderRepository.findByUserEmailOrderByOrderDateDesc(email);
+    }
+
     public BigDecimal calculateTotal(OrderRequestDTO request) {
         BigDecimal total = BigDecimal.ZERO;
 

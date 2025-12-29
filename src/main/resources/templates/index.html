@@ -32,6 +32,10 @@
                     <i class="bi bi-ticket-perforated me-2"></i>Comprar Entradas
                 </a>
 
+                <a th:href="@{/order/my-orders}" class="btn btn-info">
+                    <i class="bi bi-list-check me-2"></i>Mis Pedidos
+                </a>
+
                 <a sec:authorize="hasAnyRole('Admin', 'Manager')" th:href="@{/admin/dashboard}" class="btn btn-warning">
                     <i class="bi bi-speedometer2 me-2"></i>Panel de Control
                 </a>
