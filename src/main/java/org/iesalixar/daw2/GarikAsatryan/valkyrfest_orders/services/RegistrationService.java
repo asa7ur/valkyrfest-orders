@@ -20,6 +20,8 @@ public class RegistrationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final VerificationTokenService verificationTokenService;
+    private final EmailService emailService;
 
     @Transactional
     public void registerUser(UserRegistrationDTO dto) {
@@ -35,7 +37,9 @@ public class RegistrationService {
         user.setLastName(dto.getLastName());
         user.setBirthDate(dto.getBirthDate());
         user.setPhone(dto.getPhone());
-        user.setEnabled(true);
+
+        // El usuario nace desactivado
+        user.setEnabled(false);
 
         // Cifrar la contraseña
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -45,6 +49,13 @@ public class RegistrationService {
                 .orElseThrow(() -> new RuntimeException("Error: Role 'User' not found."));
         user.setRoles(Collections.singletonList(userRole));
 
+        // Guardamos el usuario primero para que tenga un ID generado
         userRepository.save(user);
+
+        // Generamos el token de verificación asociado a este usuario
+        String token = verificationTokenService.createVerificationToken(user);
+
+        // Enviamos el email
+        emailService.sendRegistrationConfirmationEmail(user.getEmail(), user.getFirstName(), token);
     }
 }
