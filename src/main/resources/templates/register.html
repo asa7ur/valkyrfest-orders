@@ -44,9 +44,17 @@
                         <div class="mb-3">
                             <label class="form-label" th:text="#{msg.register.password}">Contraseña</label>
                             <input type="password" th:field="*{password}" class="form-control"
-                                   th:errorclass="is-invalid">
+                                   th:errorclass="is-invalid" placeholder="********">
                             <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
                                  th:errors="*{password}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Contraseña</label>
+                            <input type="password" th:field="*{confirmPassword}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="********">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('confirmPassword')}"
+                                 th:errors="*{confirmPassword}"></div>
                         </div>
 
                         <div class="row">
