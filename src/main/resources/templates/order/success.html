@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{msg.order.success.title}">Reserva Confirmada - Valkyrfest</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .qr-mock {
+            background: white;
+            color: black;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            border: 2px dashed #333;
+        }
+
+        .ticket-card {
+            border-left: 5px solid #ffc107;
+        }
+
+        .camping-card {
+            border-left: 5px solid #198754;
+        }
+    </style>
+</head>
+<body class="bg-dark text-white">
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+        <h1 class="display-4 fw-bold" th:text="#{msg.order.success.title}">¡Reserva Confirmada!</h1>
+        <p class="lead" th:text="#{msg.order.success.message}">Gracias por tu compra. Aquí tienes tus credenciales para
+            el Valhalla.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card bg-secondary text-white shadow">
+                <div class="card-header"><h4 class="mb-0">Detalles del Pedido</h4></div>
+                <div class="card-body">
+                    <p><strong>ID Pedido:</strong> <span th:text="${order.id}"></span></p>
+                    <p><strong>Fecha:</strong> <span
+                            th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}"></span></p>
+                    <p><strong>Usuario:</strong> <span th:text="${order.user.email}"></span></p>
+                    <hr>
+                    <h3 class="text-warning">Total: <span th:text="${order.totalPrice}"></span>€</h3>
+                </div>
+                <div class="card-footer">
+                    <a th:href="@{/}" class="btn btn-outline-light w-100">Volver al Inicio</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div th:if="${not #lists.isEmpty(order.tickets)}" class="mb-4">
+                <h3 class="mb-3"><i class="bi bi-ticket-perforated me-2"></i>Tus Entradas</h3>
+                <div th:each="t : ${order.tickets}" class="card bg-light text-dark mb-3 ticket-card shadow-sm">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1" th:text="|${t.firstName} ${t.lastName}|">Nombre</h5>
+                            <p class="mb-0 text-muted" th:text="${t.ticketType.name}">Tipo Entrada</p>
+                            <small class="text-uppercase" th:text="|${t.documentType}: ${t.documentNumber}|"></small>
+                        </div>
+                        <div class="text-center">
+                            <div class="qr-mock mb-1" th:text="${#strings.substring(t.qrCode, 0, 8)}">QR_CODE</div>
+                            <small class="fw-bold">CÓDIGO DE ACCESO</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${not #lists.isEmpty(order.campings)}">
+                <h3 class="mb-3"><i class="bi bi-tent me-2"></i>Reservas de Camping</h3>
+                <div th:each="c : ${order.campings}" class="card bg-light text-dark mb-3 camping-card shadow-sm">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1" th:text="|${c.firstName} ${c.lastName}|">Nombre</h5>
+                            <p class="mb-0 text-muted" th:text="${c.campingType.name}">Tipo Alojamiento</p>
+                            <small class="text-uppercase" th:text="|${c.documentType}: ${c.documentNumber}|"></small>
+                        </div>
+                        <div class="text-center">
+                            <div class="qr-mock mb-1" th:text="${#strings.substring(c.qrCode, 0, 8)}">QR_CODE</div>
+                            <small class="fw-bold">CÓDIGO CAMPING</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

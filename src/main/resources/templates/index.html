@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Valkyrfest - Inicio</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-dark text-white">
+
+<div class="container d-flex align-items-center justify-content-center vh-100">
+    <div class="text-center">
+        <h1 class="display-1 fw-bold mb-4">VALKYRFEST</h1>
+        <p class="lead mb-5">La mayor expedición musical al Valhalla Andaluz te espera.</p>
+
+        <div sec:authorize="!isAuthenticated()" class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+            <a th:href="@{/login}" class="btn btn-primary btn-lg px-4 gap-3">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </a>
+            <a th:href="@{/register}" class="btn btn-outline-light btn-lg px-4">
+                <i class="bi bi-person-plus me-2"></i>Registro
+            </a>
+        </div>
+
+        <div sec:authorize="isAuthenticated()" class="mt-4">
+            <p class="fs-4">
+                <span>¡Hola, festivalero!</span>
+                <strong sec:authentication="name" class="text-warning">User</strong>
+            </p>
+            <div class="d-flex justify-content-center gap-2">
+                <a th:href="@{/order}" class="btn btn-success">
+                    <i class="bi bi-ticket-perforated me-2"></i>Comprar Entradas
+                </a>
+
+                <a sec:authorize="hasAnyRole('Admin', 'Manager')" th:href="@{/admin/dashboard}" class="btn btn-warning">
+                    <i class="bi bi-speedometer2 me-2"></i>Panel de Control
+                </a>
+
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-outline-danger">Cerrar Sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

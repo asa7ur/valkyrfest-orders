@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="ticketRow(index, item)">
+    <div class="row g-3 mb-3 p-3 border border-dark rounded bg-dark ticket-row">
+        <div class="col-md-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" th:name="|tickets[${index}].firstName|" th:value="${item != null ? item.firstName : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Apellido</label>
+            <input type="text" th:name="|tickets[${index}].lastName|" th:value="${item != null ? item.lastName : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tipo Doc.</label>
+            <select th:name="|tickets[${index}].documentType|" class="form-select" required>
+                <option th:each="type : ${T(org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.DocumentType).values()}"
+                        th:value="${type}" th:text="${type}"
+                        th:selected="${item != null && item.documentType == type}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Nº Documento</label>
+            <input type="text" th:name="|tickets[${index}].documentNumber|"
+                   th:value="${item != null ? item.documentNumber : ''}" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Entrada</label>
+            <select th:name="|tickets[${index}].ticketTypeId|" class="form-select" required>
+                <option value="">-- Selecciona --</option>
+                <option th:each="tt : ${ticketTypes}" th:value="${tt.id}"
+                        th:selected="${item != null && item.ticketTypeId == tt.id}"
+                        th:text="${tt.name} + ' (' + ${tt.price} + '€)'"></option>
+            </select>
+        </div>
+        <div class="col-md-3 mt-2">
+            <label class="form-label">Fecha Nacimiento</label>
+            <input type="date" th:name="|tickets[${index}].birthDate|" th:value="${item != null ? item.birthDate : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-1 d-flex align-items-end ms-auto">
+            <button type="button" class="btn btn-danger" onclick="removeRow(this, 'ticket')"><i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div th:fragment="campingRow(index, item)">
+    <div class="row g-3 mb-3 p-3 border border-dark rounded bg-dark camping-row">
+        <div class="col-md-3">
+            <label class="form-label">Nombre</label>
+            <input type="text" th:name="|campings[${index}].firstName|" th:value="${item != null ? item.firstName : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Apellido</label>
+            <input type="text" th:name="|campings[${index}].lastName|" th:value="${item != null ? item.lastName : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tipo Doc.</label>
+            <select th:name="|campings[${index}].documentType|" class="form-select" required>
+                <option th:each="type : ${T(org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.DocumentType).values()}"
+                        th:value="${type}" th:text="${type}"
+                        th:selected="${item != null && item.documentType == type}"></option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Nº Documento</label>
+            <input type="text" th:name="|campings[${index}].documentNumber|"
+                   th:value="${item != null ? item.documentNumber : ''}" class="form-control" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tipo Alojamiento</label>
+            <select th:name="|campings[${index}].campingTypeId|" class="form-select" required>
+                <option value="">-- Selecciona --</option>
+                <option th:each="ct : ${campingTypes}" th:value="${ct.id}"
+                        th:selected="${item != null && item.campingTypeId == ct.id}"
+                        th:text="${ct.name} + ' (' + ${ct.price} + '€)'"></option>
+            </select>
+        </div>
+        <div class="col-md-3 mt-2">
+            <label class="form-label">Fecha Nacimiento</label>
+            <input type="date" th:name="|campings[${index}].birthDate|" th:value="${item != null ? item.birthDate : ''}"
+                   class="form-control" required>
+        </div>
+        <div class="col-md-1 d-flex align-items-end ms-auto">
+            <button type="button" class="btn btn-danger" onclick="removeRow(this, 'camping')"><i
+                    class="bi bi-trash"></i></button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

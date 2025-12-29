@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Resumen de Compra - Valkyrfest</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-dark text-white">
+<div class="container py-5">
+    <h1 class="mb-4 text-center">Resumen de tu Expedición</h1>
+
+    <div class="card bg-secondary mb-4">
+        <div class="card-body">
+            <table class="table table-dark table-hover">
+                <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Asistente</th>
+                    <th>Precio</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t, stat : ${orderRequest.tickets}">
+                    <td><i class="bi bi-ticket-perforated me-2"></i><span
+                            th:text="${ticketTypesMap.get(t.ticketTypeId).name}"></span></td>
+                    <td th:text="|${t.firstName} ${t.lastName}|"></td>
+                    <td th:text="${ticketTypesMap.get(t.ticketTypeId).price} + '€'"></td>
+                    <td>
+                        <a th:href="@{/order/remove/ticket/{id}(id=${stat.index})}"
+                           class="btn btn-sm btn-danger">Eliminar</a>
+                    </td>
+                </tr>
+                <tr th:each="c, stat : ${orderRequest.campings}">
+                    <td><i class="bi bi-tent me-2"></i><span
+                            th:text="${campingTypesMap.get(c.campingTypeId).name}"></span></td>
+                    <td th:text="|${c.firstName} ${c.lastName}|"></td>
+                    <td th:text="${campingTypesMap.get(c.campingTypeId).price}  + '€'"></td>
+                    <td>
+                        <a th:href="@{/order/remove/camping/{id}(id=${stat.index})}"
+                           class="btn btn-sm btn-danger">Eliminar</a>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th colspan="2" class="text-end text-warning fs-4">TOTAL:</th>
+                    <th colspan="2" class="text-warning fs-4" th:text="${totalPrice} + '€'">0€</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between">
+        <a th:href="@{/order}" class="btn btn-outline-light">Volver a editar</a>
+        <form th:action="@{/order/confirm}" method="post">
+            <button type="submit" class="btn btn-success btn-lg">Confirmar Pago</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

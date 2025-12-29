@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{msg.register.title}">Registro - Valkyrfest</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h2 class="text-center mb-4" th:text="#{msg.register.header}">Inicia tu expedición</h2>
+
+                    <form th:action="@{/register}" th:object="${user}" method="post">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" th:text="#{msg.register.firstName}">Nombre</label>
+                                <input type="text" th:field="*{firstName}" class="form-control"
+                                       th:errorclass="is-invalid" placeholder="Garik">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}"
+                                     th:errors="*{firstName}"></div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" th:text="#{msg.register.lastName}">Apellido</label>
+                                <input type="text" th:field="*{lastName}" class="form-control"
+                                       th:errorclass="is-invalid" placeholder="Asatryan">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}"
+                                     th:errors="*{lastName}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" th:field="*{email}" class="form-control"
+                                   th:errorclass="is-invalid" placeholder="ejemplo@valkyr.com">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
+                                 th:errors="*{email}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" th:text="#{msg.register.password}">Contraseña</label>
+                            <input type="password" th:field="*{password}" class="form-control"
+                                   th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}"
+                                 th:errors="*{password}"></div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" th:text="#{msg.register.birthDate}">Fecha de
+                                    Nacimiento</label>
+                                <input type="date" th:field="*{birthDate}" class="form-control"
+                                       th:errorclass="is-invalid">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('birthDate')}"
+                                     th:errors="*{birthDate}"></div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" th:text="#{msg.register.phone}">Teléfono</label>
+                                <input type="text" th:field="*{phone}" class="form-control"
+                                       th:errorclass="is-invalid">
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}"
+                                     th:errors="*{phone}"></div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 mt-3"
+                                th:text="#{msg.register.button}">
+                            Unirse ahora
+                        </button>
+                    </form>
+
+                    <div class="mt-4 text-center">
+                        <p class="mb-0">
+                            <span th:text="#{msg.register.alreadyHaveAccount}">¿Ya eres un guerrero?</span>
+                            <a th:href="@{/login}" class="text-decoration-none fw-bold">Login</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-3 text-muted">
+                <small>
+                    <a th:href="@{/register(lang=es)}">ES</a> |
+                    <a th:href="@{/register(lang=en)}">EN</a> |
+                    <a th:href="@{/register(lang=de)}">DE</a> |
+                    <a th:href="@{/register(lang=fr)}">FR</a> |
+                    <a th:href="@{/register(lang=ru)}">RU</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

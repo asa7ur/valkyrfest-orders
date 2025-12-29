@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="#{msg.order.title}">Compra - Valkyrfest</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-dark text-white">
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-11">
+            <h1 class="display-5 fw-bold mb-4 text-center" th:text="#{msg.order.title}">Finalizar Compra</h1>
+
+            <form th:action="@{/order}" th:object="${orderRequest}" method="post">
+
+                <div class="card bg-secondary text-white mb-4 shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="bi bi-ticket-perforated me-2"></i>Entradas</h3>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="addItem('ticket')">
+                            <i class="bi bi-plus-circle me-1"></i>Añadir Asistente
+                        </button>
+                    </div>
+                    <div class="card-body" id="ticket-container">
+                        <th:block th:each="ticket, stat : ${orderRequest.tickets}">
+                            <div th:replace="~{order/fragments :: ticketRow(${stat.index}, ${ticket})}"></div>
+                        </th:block>
+                        <p class="text-center text-light" id="no-ticket-msg"
+                           th:style="${#lists.isEmpty(orderRequest.tickets)} ? 'display:block' : 'display:none'">
+                            No has añadido ninguna entrada todavía.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card bg-secondary text-white mb-4 shadow">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="bi bi-tent me-2"></i>Camping</h3>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="addItem('camping')">
+                            <i class="bi bi-plus-circle me-1"></i>Añadir Reserva
+                        </button>
+                    </div>
+                    <div class="card-body" id="camping-container">
+                        <th:block th:each="camping, stat : ${orderRequest.campings}">
+                            <div th:replace="~{order/fragments :: campingRow(${stat.index}, ${camping})}"></div>
+                        </th:block>
+                        <p class="text-center text-light" id="no-camping-msg"
+                           th:style="${#lists.isEmpty(orderRequest.campings)} ? 'display:block' : 'display:none'">
+                            No has añadido reservas de camping.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg"><i class="bi bi-cart-check me-2"></i>Ir al
+                        Checkout
+                    </button>
+                    <a th:href="@{/}" class="btn btn-outline-light">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="ticket-template" class="d-none">
+    <div th:replace="~{order/fragments :: ticketRow('INDEX', null)}"></div>
+</div>
+<div id="camping-template" class="d-none">
+    <div th:replace="~{order/fragments :: campingRow('INDEX', null)}"></div>
+</div>
+
+<script th:inline="javascript">
+    // Los comentarios /*[[...]]*/ evitan que el IDE se queje de errores de sintaxis
+    let counters = {
+        ticket: /*[[${#lists.size(orderRequest.tickets)}]]*/ 0,
+        camping: /*[[${#lists.size(orderRequest.campings)}]]*/ 0
+    };
+
+    function addItem(type) {
+        // Ocultar mensaje de vacío
+        const msg = document.getElementById(`no-${type}-msg`);
+        if (msg) msg.style.display = 'none';
+
+        const container = document.getElementById(`${type}-container`);
+        const templateHtml = document.getElementById(`${type}-template`).innerHTML;
+
+        // Reemplazar el marcador de posición por el índice actual
+        const newRowHtml = templateHtml.replace(/INDEX/g, counters[type]);
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = newRowHtml;
+        container.appendChild(wrapper.firstElementChild);
+
+        counters[type]++;
+    }
+
+    // NUEVO MÉTODO: Borra la fila y muestra el mensaje si es la última
+    function removeRow(btn, type) {
+        const container = document.getElementById(`${type}-container`);
+
+        // Eliminamos la fila visualmente
+        btn.closest('.row').remove();
+
+        // Buscamos cuántas filas de ese tipo quedan
+        const remainingRows = container.getElementsByClassName(`${type}-row`).length;
+
+        // Si no quedan filas, volvemos a mostrar el mensaje de "No has añadido..."
+        if (remainingRows === 0) {
+            const msg = document.getElementById(`no-${type}-msg`);
+            if (msg) msg.style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
