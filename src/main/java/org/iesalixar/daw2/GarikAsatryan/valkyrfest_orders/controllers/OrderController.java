@@ -8,7 +8,12 @@ import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.Order;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.TicketType;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.CampingTypeService;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.OrderService;
+import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.PdfGeneratorService;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.TicketTypeService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,6 +31,7 @@ public class OrderController {
     private final OrderService orderService;
     private final TicketTypeService ticketTypeService;
     private final CampingTypeService campingTypeService;
+    private final PdfGeneratorService pdfGeneratorService;
 
     // 1. Mostrar el formulario inicial
     @GetMapping
@@ -120,5 +126,23 @@ public class OrderController {
 
         model.addAttribute("order", order);
         return "order/success";
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id, Authentication authentication) throws Exception {
+        Order order = orderService.getOrderById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        // Seguridad: solo el dueño del pedido puede descargarlo
+        if (!order.getUser().getEmail().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        byte[] pdfBytes = pdfGeneratorService.generateOrderPdf(order);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Valkyrfest_Pedido_" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
     }
 }
