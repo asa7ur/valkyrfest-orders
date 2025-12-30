@@ -7,6 +7,7 @@ import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.CampingType;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.Order;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.TicketType;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.User;
+import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.exceptions.AppException; // Importación necesaria
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,11 +31,9 @@ public class OrderController {
     private final TicketTypeService ticketTypeService;
     private final CampingTypeService campingTypeService;
     private final PdfGeneratorService pdfGeneratorService;
-    // NUEVAS INYECCIONES
     private final UserService userService;
     private final PaymentService paymentService;
 
-    // 1. Mostrar el formulario inicial
     @GetMapping
     public String showOrderForm(Model model, HttpSession session) {
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
@@ -46,14 +45,12 @@ public class OrderController {
         return "order/form";
     }
 
-    // 2. Recibir datos del formulario y enviarlos al Checkout (Sesión)
     @PostMapping
     public String processToCheckout(@ModelAttribute OrderRequestDTO orderRequest, HttpSession session) {
         session.setAttribute("pendingOrder", orderRequest);
         return "redirect:/order/checkout";
     }
 
-    // 3. Mostrar la página de Checkout (Resumen)
     @GetMapping("/checkout")
     public String showCheckout(HttpSession session, Model model) {
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
@@ -82,7 +79,6 @@ public class OrderController {
         return "order/my-orders";
     }
 
-    // 4. Eliminar items desde el checkout
     @GetMapping("/remove/{type}/{index}")
     public String removeItem(@PathVariable String type, @PathVariable int index, HttpSession session) {
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
@@ -96,33 +92,23 @@ public class OrderController {
         return "redirect:/order/checkout";
     }
 
-    // 5. Confirmación final, creación del pedido y redirección a Stripe
     @PostMapping("/confirm")
     public String confirmOrder(HttpSession session, Authentication authentication) throws Exception {
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
         if (request == null) return "redirect:/order";
 
-        // Obtenemos el usuario autenticado como Objeto User
         User user = userService.getUserByEmail(authentication.getName());
-
-        // Creamos el pedido (esto ahora requiere el objeto User)
         Order order = orderService.executeOrder(request, user);
-
-        // Generamos la URL de Stripe para este pedido
         String stripeUrl = paymentService.createStripeSession(order);
-
-        // Limpiamos la sesión una vez creado el pedido
         session.removeAttribute("pendingOrder");
 
-        // Redirigimos a la pasarela externa de Stripe
         return "redirect:" + stripeUrl;
     }
 
-    // 6. Pantalla de éxito (Stripe nos enviará aquí al terminar)
     @GetMapping("/success/{id}")
     public String showSuccess(@PathVariable Long id, Model model, Authentication authentication) {
         Order order = orderService.getOrderById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new AppException("msg.error.orderNotFound"));
 
         if (!order.getUser().getEmail().equals(authentication.getName())) {
             return "redirect:/";
@@ -135,7 +121,7 @@ public class OrderController {
     @GetMapping("/download/{id}")
     public ResponseEntity<byte[]> downloadPdf(@PathVariable Long id, Authentication authentication) throws Exception {
         Order order = orderService.getOrderById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+                .orElseThrow(() -> new AppException("msg.error.orderNotFound"));
 
         if (!order.getUser().getEmail().equals(authentication.getName())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

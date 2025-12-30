@@ -3,6 +3,7 @@ package org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.User;
+import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.exceptions.AppException;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.repositories.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +27,7 @@ public class UserService {
 
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
+                .orElseThrow(() -> new AppException("msg.error.userNotFound"));
     }
 
     @Transactional
