@@ -6,12 +6,12 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.Order;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.OrderStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -66,10 +66,6 @@ public class PaymentService {
         return session.getUrl();
     }
 
-    /**
-     * IMPORTANTE: Añadimos @Transactional para evitar errores de carga perezosa (Lazy)
-     * al acceder a los tickets y campings durante la generación del PDF.
-     */
     @Transactional
     public void processWebhookEvent(String payload, String sigHeader) throws Exception {
         Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
@@ -82,31 +78,30 @@ public class PaymentService {
                 String orderIdStr = session.getClientReferenceId();
 
                 if (orderIdStr != null) {
-                    Long orderId = Long.parseLong(orderIdStr);
-                    System.out.println("DEBUG: Procesando pago para el pedido ID: " + orderId);
+                    try {
+                        Long orderId = Long.parseLong(orderIdStr);
 
-                    orderService.getOrderById(orderId).ifPresentOrElse(order -> {
+                        // 1. Usamos el nuevo método para asegurar la persistencia del estado PAID
+                        Order order = orderService.confirmPayment(orderId);
+                        System.out.println("LOG: Pedido #" + orderId + " marcado como PAID.");
+
+                        // 2. Generación de PDF y envío de Email (ahora dentro de la transacción para evitar errores Lazy)
                         try {
-                            // 1. Cambiamos el estado
-                            order.setStatus(OrderStatus.PAID);
-                            orderService.saveOrder(order);
-                            System.out.println("DEBUG: Estado del pedido #" + orderId + " cambiado a PAID.");
-
-                            // 2. Generamos el PDF (esto fallaba antes por el Lazy loading)
                             byte[] pdfBytes = pdfGeneratorService.generateOrderPdf(order);
-                            System.out.println("DEBUG: PDF generado con éxito.");
-
-                            // 3. Enviamos el correo
                             emailService.sendOrderConfirmationEmail(order, pdfBytes);
-                            System.out.println("LOG: Pedido #" + orderId + " completado y correo enviado.");
-
+                            System.out.println("LOG: Email enviado a Mailtrap con éxito.");
                         } catch (Exception e) {
-                            System.err.println("ERROR CRÍTICO procesando pedido #" + orderId + ": " + e.getMessage());
-                            e.printStackTrace();
+                            // Si falla el email, capturamos el error para que NO haga rollback del pago
+                            System.err.println("ADVERTENCIA: Pago registrado pero falló el email: " + e.getMessage());
                         }
-                    }, () -> System.err.println("ERROR: No se encontró el pedido con ID: " + orderId));
+
+                    } catch (Exception e) {
+                        System.err.println("ERROR CRÍTICO procesando el webhook: " + e.getMessage());
+                        e.printStackTrace();
+                        throw e;
+                    }
                 } else {
-                    System.err.println("ADVERTENCIA: Webhook recibido sin clientReferenceId.");
+                    System.err.println("ADVERTENCIA: No hay clientReferenceId en la sesión de Stripe.");
                 }
             }
         }

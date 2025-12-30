@@ -91,8 +91,6 @@ public class OrderService {
 
     @Transactional
     public Order executeOrder(OrderRequestDTO request, User user) {
-
-        // Validamos que no intente comprar nada (ambas listas vacías)
         boolean hasTickets = request.getTickets() != null && !request.getTickets().isEmpty();
         boolean hasCampings = request.getCampings() != null && !request.getCampings().isEmpty();
 
@@ -100,24 +98,19 @@ public class OrderService {
             throw new AppException("msg.validation.atLeastOne");
         }
 
-        // Creamos la cabecera del pedido
         Order order = new Order();
         order.setUser(user);
         order.setOrderDate(LocalDateTime.now());
-        // El estado inicial para Stripe es PENDING
         order.setStatus(OrderStatus.PENDING);
         BigDecimal totalPrice = BigDecimal.ZERO;
 
-        // Procesamos los tickets
         if (hasTickets) {
             for (TicketOrderDTO tDto : request.getTickets()) {
                 TicketType type = ticketTypeRepository.findById(tDto.getTicketTypeId())
                         .orElseThrow(() -> new AppException("msg.error.ticketTypeNotFound"));
 
-                // Validar stock
                 if (type.getStockAvailable() <= 0) throw new AppException("msg.error.noStock", type.getName());
 
-                // Crear entidad Ticket
                 Ticket ticket = new Ticket();
                 ticket.setFirstName(tDto.getFirstName());
                 ticket.setLastName(tDto.getLastName());
@@ -131,13 +124,11 @@ public class OrderService {
                 order.getTickets().add(ticket);
                 totalPrice = totalPrice.add(type.getPrice());
 
-                // Reducir stock
                 type.setStockAvailable(type.getStockAvailable() - 1);
                 ticketTypeRepository.save(type);
             }
         }
 
-        // Procesamos el Camping
         if (hasCampings) {
             for (CampingOrderDTO cDto : request.getCampings()) {
                 CampingType type = campingTypeRepository.findById(cDto.getCampingTypeId())
@@ -165,8 +156,19 @@ public class OrderService {
             }
         }
 
-        // Guardamos el pedido final con el precio total
         order.setTotalPrice(totalPrice);
+        return orderRepository.save(order);
+    }
+
+    /**
+     * Nuevo método para confirmar el pago.
+     * Al ser @Transactional, asegura que el cambio de estado se guarde inmediatamente.
+     */
+    @Transactional
+    public Order confirmPayment(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado con ID: " + orderId));
+        order.setStatus(OrderStatus.PAID);
         return orderRepository.save(order);
     }
 }
