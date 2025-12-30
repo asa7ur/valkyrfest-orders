@@ -6,10 +6,8 @@ import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.dto.OrderRequestDTO;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.CampingType;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.Order;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.TicketType;
-import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.CampingTypeService;
-import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.OrderService;
-import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.PdfGeneratorService;
-import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.TicketTypeService;
+import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.User;
+import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.services.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,14 +30,14 @@ public class OrderController {
     private final TicketTypeService ticketTypeService;
     private final CampingTypeService campingTypeService;
     private final PdfGeneratorService pdfGeneratorService;
+    // NUEVAS INYECCIONES
+    private final UserService userService;
+    private final PaymentService paymentService;
 
     // 1. Mostrar el formulario inicial
     @GetMapping
     public String showOrderForm(Model model, HttpSession session) {
-        // Intentamos recuperar la compra de la sesión
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
-
-        // Si no hay nada (primera vez), creamos uno vacío
         if (request == null) request = new OrderRequestDTO();
 
         model.addAttribute("orderRequest", request);
@@ -68,7 +66,6 @@ public class OrderController {
         model.addAttribute("orderRequest", request);
         model.addAttribute("totalPrice", total);
 
-        // Mapas para obtener nombres y precios por ID en la vista
         model.addAttribute("ticketTypesMap", ticketTypeService.getAllTicketTypes().stream()
                 .collect(Collectors.toMap(TicketType::getId, t -> t)));
         model.addAttribute("campingTypesMap", campingTypeService.getAllCampingTypes().stream()
@@ -79,12 +76,8 @@ public class OrderController {
 
     @GetMapping("/my-orders")
     public String showMyOrders(Authentication authentication, Model model) {
-        // Obtenemos el email del usuario logueado
         String email = authentication.getName();
-
-        // Recuperamos su lista de pedidos
         List<Order> myOrders = orderService.getOrdersByUser(email);
-
         model.addAttribute("orders", myOrders);
         return "order/my-orders";
     }
@@ -103,18 +96,29 @@ public class OrderController {
         return "redirect:/order/checkout";
     }
 
-    // 5. Confirmación final y persistencia en DB
+    // 5. Confirmación final, creación del pedido y redirección a Stripe
     @PostMapping("/confirm")
-    public String confirmOrder(HttpSession session, Authentication authentication) {
+    public String confirmOrder(HttpSession session, Authentication authentication) throws Exception {
         OrderRequestDTO request = (OrderRequestDTO) session.getAttribute("pendingOrder");
         if (request == null) return "redirect:/order";
 
-        Order order = orderService.executeOrder(request, authentication.getName());
-        session.removeAttribute("pendingOrder"); // Limpiar carrito
-        return "redirect:/order/success/" + order.getId();
+        // Obtenemos el usuario autenticado como Objeto User
+        User user = userService.getUserByEmail(authentication.getName());
+
+        // Creamos el pedido (esto ahora requiere el objeto User)
+        Order order = orderService.executeOrder(request, user);
+
+        // Generamos la URL de Stripe para este pedido
+        String stripeUrl = paymentService.createStripeSession(order);
+
+        // Limpiamos la sesión una vez creado el pedido
+        session.removeAttribute("pendingOrder");
+
+        // Redirigimos a la pasarela externa de Stripe
+        return "redirect:" + stripeUrl;
     }
 
-    // 6. Pantalla de éxito
+    // 6. Pantalla de éxito (Stripe nos enviará aquí al terminar)
     @GetMapping("/success/{id}")
     public String showSuccess(@PathVariable Long id, Model model, Authentication authentication) {
         Order order = orderService.getOrderById(id)
@@ -133,7 +137,6 @@ public class OrderController {
         Order order = orderService.getOrderById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
 
-        // Seguridad: solo el dueño del pedido puede descargarlo
         if (!order.getUser().getEmail().equals(authentication.getName())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

@@ -23,7 +23,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_date", insertable = false, updatable = false)
+    @Column(name = "order_date", updatable = false)
     private LocalDateTime orderDate;
 
     @NotNull(message = "{msg.validation.required}")

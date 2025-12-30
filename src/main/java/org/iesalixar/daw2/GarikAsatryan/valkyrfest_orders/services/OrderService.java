@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -89,7 +90,7 @@ public class OrderService {
     }
 
     @Transactional
-    public Order executeOrder(OrderRequestDTO request, String userEmail) {
+    public Order executeOrder(OrderRequestDTO request, User user) {
 
         // Validamos que no intente comprar nada (ambas listas vacías)
         boolean hasTickets = request.getTickets() != null && !request.getTickets().isEmpty();
@@ -99,14 +100,12 @@ public class OrderService {
             throw new AppException("msg.validation.atLeastOne");
         }
 
-        // Buscamos al usuario que realiza la compra
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new AppException("msg.error.userNotFound"));
-
         // Creamos la cabecera del pedido
         Order order = new Order();
         order.setUser(user);
-        order.setStatus(OrderStatus.PAID); // Asumimos pago inmediate por ahora
+        order.setOrderDate(LocalDateTime.now());
+        // El estado inicial para Stripe es PENDING
+        order.setStatus(OrderStatus.PENDING);
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         // Procesamos los tickets
@@ -171,21 +170,3 @@ public class OrderService {
         return orderRepository.save(order);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
