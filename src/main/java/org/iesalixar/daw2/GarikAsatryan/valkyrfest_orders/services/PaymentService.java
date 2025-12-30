@@ -11,6 +11,7 @@ import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.Order;
 import org.iesalixar.daw2.GarikAsatryan.valkyrfest_orders.entities.OrderStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -65,11 +66,15 @@ public class PaymentService {
         return session.getUrl();
     }
 
+    /**
+     * IMPORTANTE: Añadimos @Transactional para evitar errores de carga perezosa (Lazy)
+     * al acceder a los tickets y campings durante la generación del PDF.
+     */
+    @Transactional
     public void processWebhookEvent(String payload, String sigHeader) throws Exception {
         Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
 
         if ("checkout.session.completed".equals(event.getType())) {
-            // Usamos Optional para evitar errores si el objeto no se deserealiza bien
             Optional<Session> sessionOptional = event.getDataObjectDeserializer().getObject().map(o -> (Session) o);
 
             if (sessionOptional.isPresent()) {
@@ -78,22 +83,30 @@ public class PaymentService {
 
                 if (orderIdStr != null) {
                     Long orderId = Long.parseLong(orderIdStr);
-                    orderService.getOrderById(orderId).ifPresent(order -> {
+                    System.out.println("DEBUG: Procesando pago para el pedido ID: " + orderId);
+
+                    orderService.getOrderById(orderId).ifPresentOrElse(order -> {
                         try {
+                            // 1. Cambiamos el estado
                             order.setStatus(OrderStatus.PAID);
                             orderService.saveOrder(order);
+                            System.out.println("DEBUG: Estado del pedido #" + orderId + " cambiado a PAID.");
 
+                            // 2. Generamos el PDF (esto fallaba antes por el Lazy loading)
                             byte[] pdfBytes = pdfGeneratorService.generateOrderPdf(order);
-                            emailService.sendOrderConfirmationEmail(order, pdfBytes);
+                            System.out.println("DEBUG: PDF generado con éxito.");
 
-                            System.out.println("LOG: Pedido #" + orderId + " procesado con éxito.");
+                            // 3. Enviamos el correo
+                            emailService.sendOrderConfirmationEmail(order, pdfBytes);
+                            System.out.println("LOG: Pedido #" + orderId + " completado y correo enviado.");
+
                         } catch (Exception e) {
-                            System.err.println("ERROR CRÍTICO en post-pago: " + e.getMessage());
+                            System.err.println("ERROR CRÍTICO procesando pedido #" + orderId + ": " + e.getMessage());
                             e.printStackTrace();
                         }
-                    });
+                    }, () -> System.err.println("ERROR: No se encontró el pedido con ID: " + orderId));
                 } else {
-                    System.err.println("ADVERTENCIA: Se recibió un pago de Stripe sin clientReferenceId. ¿Es una sesión antigua?");
+                    System.err.println("ADVERTENCIA: Webhook recibido sin clientReferenceId.");
                 }
             }
         }
